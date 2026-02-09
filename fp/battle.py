@@ -83,6 +83,7 @@ class Battle:
         self.battle_type = None
         self.pokemon_format = None
         self.generation = None
+        self.tier = ""
         self.time_remaining = None
 
         self.request_json = None
@@ -396,7 +397,7 @@ class Battler:
             pkmn.hp, pkmn.max_hp, pkmn.status = get_pokemon_info_from_condition(
                 pkmn_dict[constants.CONDITION]
             )
-            pkmn.ability = pkmn_dict[constants.REQUEST_DICT_ABILITY]
+            pkmn.ability = pkmn_dict.get(constants.REQUEST_DICT_ABILITY, None)
             pkmn.item = pkmn_dict[constants.ITEM] if pkmn_dict[constants.ITEM] else None
             for stat, number in pkmn_dict[constants.STATS].items():
                 pkmn.stats[constants.STAT_ABBREVIATION_LOOKUPS[stat]] = number
@@ -463,7 +464,7 @@ class Battler:
                 pkmn = Pokemon("zaciancrowned", pkmn.level)
                 pkmn.nickname = nickname
 
-            pkmn.ability = pkmn_dict[constants.REQUEST_DICT_ABILITY]
+            pkmn.ability = pkmn_dict.get(constants.REQUEST_DICT_ABILITY, None)
             pkmn.index = index + 1
             pkmn.reviving = pkmn_dict.get(constants.REVIVING, False)
             pkmn.hp, pkmn.max_hp, pkmn.status = get_pokemon_info_from_condition(
