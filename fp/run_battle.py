@@ -19,6 +19,19 @@ from fp.websocket_client import PSWebsocketClient
 logger = logging.getLogger(__name__)
 
 
+def battle_supports_tera(battle):
+    return battle.generation == "gen9"
+
+def battle_supports_mega(battle):
+    return \
+        (
+            battle.generation in ["gen6", "gen7"] or
+            (
+                battle.generation == "gen9" and
+                battle.pokemon_format == "gen9legendszaou"
+            )
+        )
+
 def format_decision(battle, decision):
     # Formats a decision for communication with Pokemon-Showdown
     # If the move can be used as a Z-Move, it will be
@@ -36,10 +49,10 @@ def format_decision(battle, decision):
         mega = False
         if decision.endswith("-tera"):
             decision = decision.replace("-tera", "")
-            tera = True
+            tera = battle_supports_tera(battle)
         elif decision.endswith("-mega"):
             decision = decision.replace("-mega", "")
-            mega = True
+            mega = battle_supports_mega(battle)
         message = "/choose move {}".format(decision)
 
         if battle.user.active.can_mega_evo and mega:
@@ -149,7 +162,7 @@ async def start_battle_common(
     battle = Battle(battle_tag)
     battle.opponent.account_name = opponent_name
     battle.pokemon_format = pokemon_battle_type
-    battle.generation = pokemon_battle_type[:4]
+    #battle.generation = pokemon_battle_type[:4]
 
     # wait until the opponent's identifier is received. This will be `p1` or `p2`.
     #
@@ -161,6 +174,10 @@ async def start_battle_common(
         if "|player|" in msg and battle.opponent.account_name in msg:
             battle.opponent.name = msg.split("|")[2]
             battle.user.name = constants.ID_LOOKUP[battle.opponent.name]
+        if "|gen|" in msg:
+            battle.generation = "gen" + msg.split("|gen|")[1].split("\n")[0]
+        if "|tier|" in msg:
+            battle.tier = msg.split("|tier|")[1].split("\n")[0]
             break
 
     return battle, msg
