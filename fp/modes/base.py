@@ -131,7 +131,7 @@ class BattleMode:
         battle = Battle(battle_tag)
         battle.opponent.account_name = opponent_name
         battle.pokemon_format = pokemon_battle_type
-        battle.generation = battle.format_spec.generation
+        #battle.generation = battle.format_spec.generation
         battle.battle_type = battle.format_spec.battle_type
         battle.mode = self
 
@@ -145,6 +145,10 @@ class BattleMode:
             if "|player|" in msg and battle.opponent.account_name in msg:
                 battle.opponent.name = msg.split("|")[2]
                 battle.user.name = constants.ID_LOOKUP[battle.opponent.name]
+            if "|gen|" in msg:
+                battle.generation = "gen" + msg.split("|gen|")[1].split("\n")[0]
+            if "|tier|" in msg:
+                battle.tier = msg.split("|tier|")[1].split("\n")[0]
                 break
 
         return battle, msg
@@ -152,6 +156,19 @@ class BattleMode:
     async def handle_team_preview(self, battle, ps_websocket_client):
         await handle_team_preview(battle, ps_websocket_client)
 
+
+def battle_supports_tera(battle):
+    return battle.generation == "gen9"
+
+def battle_supports_mega(battle):
+    return \
+        (
+            battle.generation in ["gen6", "gen7"] or
+            (
+                battle.generation == "gen9" and
+                battle.pokemon_format == "gen9legendszaou"
+            )
+        )
 
 def format_decision(battle, decision):
     # Formats a decision for communication with Pokemon-Showdown
@@ -170,10 +187,10 @@ def format_decision(battle, decision):
         mega = False
         if decision.endswith("-tera"):
             decision = decision.replace("-tera", "")
-            tera = True
+            tera = battle_supports_tera(battle)
         elif decision.endswith("-mega"):
             decision = decision.replace("-mega", "")
-            mega = True
+            mega = battle_supports_mega(battle)
         message = "/choose move {}".format(decision)
 
         if battle.user.active.can_mega_evo and mega:
